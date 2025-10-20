@@ -7,10 +7,17 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { ValidationPipe } from '@nestjs/common';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const logger = WinstonModule.createLogger(createWinstonOptions());
   const app = await NestFactory.create(AppModule, { logger });
+
+  // Apply Helmet security middleware
+  app.use(helmet());
+
+  // Enable CORS
+  app.enableCors();
 
   // Register global exception filter
   app.useGlobalFilters(new AllExceptionsFilter());

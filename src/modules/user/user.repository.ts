@@ -9,4 +9,8 @@ export class UserRepository {
   create(data: CreateUserDto) {
     return this.prisma.user.create({ data });
   }
+
+  findByEmail(email: string) {
+    return this.prisma.user.findUnique({ where: { email } });
+  }
 }
