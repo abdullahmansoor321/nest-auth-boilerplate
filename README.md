@@ -70,6 +70,14 @@ $ mau deploy
 
 With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
 
+## MongoDB / Prisma note
+
+For full Prisma compatibility, a MongoDB replica set is recommended (required for transactions). In production you should run MongoDB in replica set mode.
+
+This boilerplate includes development fallbacks so the app can start and function on a standalone MongoDB instance. If the Prisma client needs transactions and your MongoDB is not a replica set, write operations may fall back to a native MongoDB driver insert for local development.
+
+If you want the full, production-like behavior locally, run MongoDB as a replica set (for example via Docker Compose or by starting mongod with --replSet and initializing the replica set).
+
 ## Resources
 
 Check out a few resources that may come in handy when working with NestJS:

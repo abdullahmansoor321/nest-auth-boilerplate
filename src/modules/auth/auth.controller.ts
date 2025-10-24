@@ -1,17 +1,22 @@
-import { Controller, Post, Get, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Post, UseGuards, Request, Body } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { Request as ExpressRequest } from 'express';
 import { AuthService, UserPayload } from './auth.service';
+import { CreateUserDto } from '../user/dto/create-user.dto';
+import { UserService } from '../user/user.service';
 import { LocalAuthGuard } from '../../common/guards/local-auth.guard';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
-interface RequestWithUser extends Request {
+interface RequestWithUser extends ExpressRequest {
   user: Omit<UserPayload, 'password'>;
 }
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly userService: UserService,
+  ) {}
 
   @Post('login')
   @UseGuards(LocalAuthGuard)
@@ -41,23 +46,9 @@ export class AuthController {
     return this.authService.login(req.user);
   }
 
-  @Get('profile')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get current user profile' })
-  @ApiResponse({
-    status: 200,
-    description: 'Profile retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        userId: { type: 'string' },
-        email: { type: 'string' },
-      },
-    },
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  getProfile(@Request() req: RequestWithUser) {
-    return req.user;
+  @Post('register')
+  @ApiOperation({ summary: 'Register a new user' })
+  async register(@Body() createUserDto: CreateUserDto) {
+    return this.userService.create(createUserDto);
   }
 }

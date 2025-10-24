@@ -83,7 +83,7 @@ $headers = @{
   Authorization = "Bearer $token"
 }
 
-$profile = Invoke-RestMethod -Method Get -Uri http://localhost:3000/auth/profile -Headers $headers
+$profile = Invoke-RestMethod -Method Get -Uri http://localhost:3000/users/me -Headers $headers
 $profile
 # Should return: { statusCode: 200, message: "Success", data: { userId: "...", email: "admin@example.com" } }
 ```
@@ -91,7 +91,7 @@ $profile
 #### Using cURL
 ```bash
 # Replace YOUR_TOKEN_HERE with actual token
-curl -X GET http://localhost:3000/auth/profile \
+curl -X GET http://localhost:3000/users/me \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
@@ -100,7 +100,7 @@ curl -X GET http://localhost:3000/auth/profile \
 ```powershell
 # Should return 401 Unauthorized
 try {
-  Invoke-RestMethod -Method Get -Uri http://localhost:3000/auth/profile
+  Invoke-RestMethod -Method Get -Uri http://localhost:3000/users/me
 } catch {
   Write-Host "Expected error: Unauthorized"
   $_.Exception.Response.StatusCode
@@ -114,7 +114,7 @@ try {
 3. Click the **"Authorize"** button at the top right
 4. Enter: `Bearer YOUR_TOKEN_HERE` (paste your token after "Bearer ")
 5. Click "Authorize" and then "Close"
-6. Now you can test `GET /auth/profile` - it will automatically include the token
+6. Now you can test `GET /users/me` - it will automatically include the token
 7. Click "Try it out" and "Execute"
 8. Should return your user profile: `{ userId: "...", email: "..." }`
 
@@ -137,7 +137,7 @@ Write-Host "✓ Login successful! Token received." -ForegroundColor Green
 # Step 2: Access protected route
 Write-Host "`n2. Accessing protected profile endpoint..." -ForegroundColor Yellow
 $headers = @{ Authorization = "Bearer $token" }
-$profile = Invoke-RestMethod -Method Get -Uri http://localhost:3000/auth/profile -Headers $headers
+$profile = Invoke-RestMethod -Method Get -Uri http://localhost:3000/users/me -Headers $headers
 
 Write-Host "✓ Profile retrieved successfully!" -ForegroundColor Green
 Write-Host "User ID: $($profile.data.userId)" -ForegroundColor Cyan
@@ -146,7 +146,7 @@ Write-Host "Email: $($profile.data.email)" -ForegroundColor Cyan
 # Step 3: Test unauthorized access
 Write-Host "`n3. Testing unauthorized access (without token)..." -ForegroundColor Yellow
 try {
-  Invoke-RestMethod -Method Get -Uri http://localhost:3000/auth/profile
+  Invoke-RestMethod -Method Get -Uri http://localhost:3000/users/me
   Write-Host "✗ Expected error but got success!" -ForegroundColor Red
 } catch {
   Write-Host "✓ Correctly rejected unauthorized request" -ForegroundColor Green

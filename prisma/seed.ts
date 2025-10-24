@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -29,9 +29,11 @@ async function main() {
       );
       try {
         // Drop the underlying collection created by Prisma. The collection name is `User` (capitalized from the model name).
-        await prisma.$runCommandRaw({ drop: 'User' });
+        await prisma.$runCommandRaw({ drop: 'User' } as unknown as Prisma.InputJsonObject);
       } catch (dropErr) {
-        console.warn('Failed to drop collection via $runCommandRaw:', dropErr);
+        if (dropErr instanceof Error)
+          console.warn('Failed to drop collection via $runCommandRaw:', dropErr.message);
+        else console.warn('Failed to drop collection via $runCommandRaw:', String(dropErr));
       }
     } else {
       throw e;
@@ -43,32 +45,45 @@ async function main() {
 
   // Prepare sample users
   const users = [
-    { name: 'Admin User', email: 'admin@example.com', password: hashed },
-    { name: 'Jane Doe', email: 'jane.doe@example.com', password: hashed },
+    { name: 'Admin User', email: 'admin@example.com', password: hashed, role: 'ADMIN' },
+    { name: 'Jane Doe', email: 'jane.doe@example.com', password: hashed, role: 'USER' },
   ];
 
-  // Use createMany for efficient batch insert
+  // Create users individually to avoid type mismatches for certain Prisma providers
   try {
-    const result = await prisma.user.createMany({
-      data: users,
-    });
-    console.log(`✓ Created ${result.count} users successfully.`);
+    for (const u of users) {
+      // Build a typed create input to satisfy the Prisma client typings
+      const createInput = {
+        name: u.name,
+        email: u.email,
+        password: u.password,
+        role: u.role as Prisma.UserCreateInput['role'],
+      } as Prisma.UserCreateInput;
+      await prisma.user.create({ data: createInput });
+    }
+    console.log(`✓ Created ${users.length} users successfully.`);
   } catch (e: unknown) {
     if (isPrismaError(e) && e.code === 'P2031') {
       console.warn(
         'Prisma createMany failed due to missing replica set (P2031). Falling back to $runCommandRaw insert.',
       );
       try {
-        const now = { $date: new Date().toISOString() };
+        const now = new Date();
         const docs = users.map((u) => ({
           ...u,
           createdAt: now,
           updatedAt: now,
+          role: u.role ?? 'USER',
         }));
-        await prisma.$runCommandRaw({ insert: 'User', documents: docs });
+        await prisma.$runCommandRaw({
+          insert: 'User',
+          documents: docs,
+        } as unknown as Prisma.InputJsonObject);
         console.log(`✓ Created ${users.length} users via raw insert.`);
       } catch (rawErr) {
-        console.error('Failed to insert documents via $runCommandRaw:', rawErr);
+        if (rawErr instanceof Error)
+          console.error('Failed to insert documents via $runCommandRaw:', rawErr.message);
+        else console.error('Failed to insert documents via $runCommandRaw:', String(rawErr));
         throw rawErr;
       }
     } else {
