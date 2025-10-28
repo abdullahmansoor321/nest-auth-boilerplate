@@ -3,7 +3,6 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { WinstonModule } from 'nest-winston';
 import { createWinstonOptions } from './config/winston.config';
-import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { HttpAdapterHost } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
@@ -28,8 +27,6 @@ async function bootstrap() {
   });
 
   // Register global exception filters
-  // Keep the old AllExceptionsFilter for backward compatibility logging
-  app.useGlobalFilters(new AllExceptionsFilter());
   // Register the new GlobalExceptionFilter which needs the HttpAdapterHost
   const httpAdapterHost = app.get(HttpAdapterHost);
   app.useGlobalFilters(new GlobalExceptionFilter(httpAdapterHost));
