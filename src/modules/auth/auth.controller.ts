@@ -22,30 +22,65 @@ export class AuthController {
 
   @Post('login')
   @UseGuards(LocalAuthGuard)
-  @ApiOperation({ summary: 'User login' })
+  @ApiOperation({
+    summary: 'User login',
+    description:
+      'Authenticates user credentials and returns JWT access token (includes user role) and refresh token. Access token expires in 15 minutes.',
+  })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        email: { type: 'string', example: 'admin@example.com' },
-        password: { type: 'string', example: 'password123' },
+        email: { type: 'string', example: 'admin@example.com', description: 'User email address' },
+        password: { type: 'string', example: 'password123', description: 'User password' },
       },
       required: ['email', 'password'],
     },
   })
   @ApiResponse({
     status: 200,
-    description: 'Login successful',
+    description: 'Login successful. Returns JWT access token with user role embedded in payload.',
     schema: {
       type: 'object',
       properties: {
-        access_token: { type: 'string' },
-        refresh_token: { type: 'string' },
-        expires_in: { type: 'number' },
+        statusCode: { type: 'number', example: 200 },
+        message: { type: 'string', example: 'Success' },
+        data: {
+          type: 'object',
+          properties: {
+            access_token: {
+              type: 'string',
+              example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+              description:
+                'JWT access token (15 min expiry). Payload includes: { sub, email, role }',
+            },
+            refresh_token: {
+              type: 'string',
+              example: '878b73cde2ad8889d1eb337588b8494039a865316d80c969...',
+              description: 'Refresh token (7 days expiry, stored in database)',
+            },
+            expires_in: {
+              type: 'number',
+              example: 900,
+              description: 'Access token expiration time in seconds (900 = 15 minutes)',
+            },
+          },
+        },
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid credentials',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 401 },
+        message: { type: 'string', example: 'Invalid credentials' },
+        error: { type: 'string', example: 'Unauthorized' },
+      },
+    },
+  })
   async login(@Request() req: RequestWithUser) {
     return this.authService.login(req.user);
   }
@@ -57,29 +92,64 @@ export class AuthController {
   }
 
   @Post('refresh')
-  @ApiOperation({ summary: 'Refresh access token using refresh token' })
+  @ApiOperation({
+    summary: 'Refresh access token using refresh token',
+    description:
+      'Exchanges a valid refresh token for a new access token (with updated role) and rotates the refresh token. Old tokens are invalidated.',
+  })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        refresh_token: { type: 'string' },
+        refresh_token: {
+          type: 'string',
+          example: '878b73cde2ad8889d1eb337588b8494039a865316d80c969...',
+          description: 'Valid refresh token from login response',
+        },
       },
       required: ['refresh_token'],
     },
   })
   @ApiResponse({
     status: 200,
-    description: 'Token refresh successful',
+    description:
+      'Token refresh successful. Returns new access token with current user role from database.',
     schema: {
       type: 'object',
       properties: {
-        access_token: { type: 'string' },
-        refresh_token: { type: 'string' },
-        expires_in: { type: 'number' },
+        statusCode: { type: 'number', example: 200 },
+        message: { type: 'string', example: 'Success' },
+        data: {
+          type: 'object',
+          properties: {
+            access_token: {
+              type: 'string',
+              example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+              description: 'New JWT access token with updated user role (15 min expiry)',
+            },
+            refresh_token: {
+              type: 'string',
+              example: 'a1b2c3d4e5f6...',
+              description: 'New refresh token (old one is invalidated)',
+            },
+            expires_in: { type: 'number', example: 900 },
+          },
+        },
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid or expired refresh token',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 401 },
+        message: { type: 'string', example: 'Invalid or expired refresh token' },
+        error: { type: 'string', example: 'Unauthorized' },
+      },
+    },
+  })
   async refresh(@Body() { refresh_token }: RefreshTokenDto) {
     return this.authService.refreshTokens(refresh_token);
   }

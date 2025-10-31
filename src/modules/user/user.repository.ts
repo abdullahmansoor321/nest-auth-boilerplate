@@ -149,4 +149,23 @@ export class UserRepository {
   findAll() {
     return this.prisma.user.findMany({ select: userSelect });
   }
+
+  async update(id: string, data: { role?: string; name?: string; password?: string }) {
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        ...(data.role && { role: data.role as unknown as Role }),
+        ...(data.name && { name: data.name }),
+        ...(data.password && { password: data.password }),
+        updatedAt: new Date(),
+      },
+      select: userSelect,
+    });
+  }
+
+  async countByRole(role: string): Promise<number> {
+    return this.prisma.user.count({
+      where: { role: role as unknown as Role },
+    });
+  }
 }

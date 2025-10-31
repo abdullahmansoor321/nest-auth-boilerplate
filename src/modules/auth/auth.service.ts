@@ -8,6 +8,7 @@ export interface UserPayload {
   id: string;
   email: string;
   name: string | null;
+  role: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -38,7 +39,7 @@ export class AuthService {
   }
 
   async login(user: UserPayload) {
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id, email: user.email, role: user.role };
 
     // Generate access token (short-lived: 15 minutes)
     const accessToken = await this.jwtService.signAsync(payload, {
@@ -67,7 +68,7 @@ export class AuthService {
     }
 
     const user = tokenData.user;
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id, email: user.email, role: user.role };
 
     // Generate new access token
     const accessToken = await this.jwtService.signAsync(payload, {

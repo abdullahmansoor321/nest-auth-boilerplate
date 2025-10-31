@@ -1,4 +1,4 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
@@ -50,6 +50,29 @@ export class UserService {
 
   findAll() {
     return this.userRepository.findAll();
+  }
+
+  async updateUserRole(userId: string, role: string) {
+    // Check if user exists
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    // Update the user's role
+    return this.userRepository.update(userId, { role });
+  }
+
+  async countAdmins(): Promise<number> {
+    return this.userRepository.countByRole('ADMIN');
+  }
+
+  async findById(userId: string) {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+    return user;
   }
 
   // findAll intentionally removed — user management endpoints are

@@ -19,13 +19,11 @@ export class RolesGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<Request>();
-    const user = request.user as { roles?: Role[]; role?: Role } | undefined;
+    const user = request.user as { role?: Role } | undefined;
 
-    if (!user) return false;
+    if (!user || !user.role) return false;
 
-    // Support both a single `role` property and a `roles` array
-    const userRoles = user.roles ?? (user.role ? [user.role] : []);
-
-    return requiredRoles.some((role) => userRoles.includes(role));
+    // User now has a single role field from JWT payload
+    return requiredRoles.includes(user.role);
   }
 }
