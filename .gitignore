@@ -9,3 +9,13 @@ dist/
 *.db-journal
 *.sqlite
 *.sqlite3
+
+# User-requested push exclusions
+*.md
+!README.md
+test/
+scripts/
+tmp_register_attempt.js
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
